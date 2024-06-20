@@ -10,8 +10,8 @@ CARRERA DE ESPECIALIZACIÓN EN INTELIGENCIA ARTIFICIAL
 
 
 En el repositorio se encuentran tres carpetas:
-<li> <b>TP1_SQL_20240620</b>: carpeta con queries de SQL y capturas de los resultados . <a href="https://github.com/juanimunar/CEIA_BDIA_TPS_JIM/tree/main/TP1_SQL_20240620">LINK TP1</a> </li>
+<li> <b>TP1_SQL_20240620</b>: carpeta con queries de SQL y capturas de los resultados del trabajo práctico Nº1. <a href="https://github.com/juanimunar/CEIA_BDIA_TPS_JIM/tree/main/TP1_SQL_20240620">LINK TP1</a> </li>
 
-<li> <b>TP2_DOCUMENTALES_20240620.csv</b>: carpeta que incluye consignas, queries y capturas de resultados en MongoDB. <a href="https://github.com/juanimunar/CEIA_BDIA_TPS_JIM/tree/main/TP2_DOCUMENTALES_20240620">LINK TP2</a></li>
+<li> <b>TP2_DOCUMENTALES_20240620.csv</b>: carpeta que incluye consignas, queries y capturas de resultados en MongoDB del trabajo práctico Nº2. <a href="https://github.com/juanimunar/CEIA_BDIA_TPS_JIM/tree/main/TP2_DOCUMENTALES_20240620">LINK TP2</a></li>
 
-<li> <b>TPF_DOCUMENTALES_20240620</b>: carpeta que incluye consignas, queries y capturas de resultados en MongoDB. <a href="https://github.com/juanimunar/CEIA_BDIA_TPS_JIM/tree/main/TPF_DOCUMENTALES_20240620">LINK TPF</a></li>
+<li> <b>TPF_DOCUMENTALES_20240620</b>: carpeta que incluye consignas, queries y capturas de resultados en MongoDB del trabajo práctico final. <a href="https://github.com/juanimunar/CEIA_BDIA_TPS_JIM/tree/main/TPF_DOCUMENTALES_20240620">LINK TPF</a></li>
