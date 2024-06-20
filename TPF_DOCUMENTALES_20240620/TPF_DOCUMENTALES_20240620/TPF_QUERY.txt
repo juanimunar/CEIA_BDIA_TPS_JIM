@@ -1,0 +1,382 @@
+// 1. Número de películas lanzada cada año
+
+db.movies.aggregate([
+  {
+    $group: {
+      _id: "$year",
+      cuenta: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      año: "$_id",
+      cuenta: 1
+    }
+  },
+  {
+    $sort: { año: 1 }
+  }
+]);
+
+
+// 2. Calificación promedio de IMDb por género
+
+db.movies.aggregate([
+  {
+    $unwind: "$genres"
+  },
+  {
+    $group: {
+      _id: "$genres",
+      calificacion_promedio: { $avg: "$imdb.rating" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      genero: "$_id",
+      calificacion_promedio: { $round: ["$calificacion_promedio", 2] }
+    }
+  }
+]);
+
+
+// 3. Top 5 películas con más alta calificación en IMDb
+
+db.movies.aggregate([
+  {
+    $match: { "imdb.rating": { $ne: null, $type: "number" } }
+  },
+  {
+    $sort: { "imdb.rating": -1 }
+  },
+  {
+    $limit: 5
+  },
+  {
+    $project: {
+      _id: 0,
+      titulo: "$title",
+      calificacion_imdb: "$imdb.rating",
+    }
+  }
+]);
+
+
+// 4. Número total de películas y duración promedio por director
+
+db.movies.aggregate([
+  {
+    $unwind: "$directors"
+  },
+  {
+    $group: {
+      _id: "$directors",
+      total_peliculas: { $sum: 1 },
+      duracion_promedio: { $avg: "$runtime" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      director: "$_id",
+      total_peliculas: 1,
+      duracion_promedio: { $round: ["$duracion_promedio", 2] }
+    }
+  },
+  {
+    $sort: { total_peliculas: -1 }
+  }
+]);
+
+
+// 5. Distribución de películas por clasificación MPAA
+
+// VERSION 1 - Hay ruido de varios strings en 'rated' y categorías en 
+
+db.movies.aggregate([
+  {
+    $group: {
+      _id: "$rated",
+      total_peliculas: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      rated: { $ifNull: ["$_id", "Sin clasificación"] },
+      total_peliculas: 1
+    }
+  }
+]);
+
+// VERSION 2 - Solo con las clasificaciones MPAA
+
+db.movies.aggregate([
+  {
+    $match: {
+      rated: { $in: ["G", "PG", "PG-13", "R", "NC-17"] }
+    }
+  },
+  {
+    $group: {
+      _id: "$rated",
+      total_peliculas: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      MPAA: "$_id",
+      total_peliculas: 1
+    }
+  }
+]);
+
+
+// 6. Top 3 países productores de películas
+
+db.movies.aggregate([
+  {
+    $unwind: "$countries"
+  },
+  {
+    $group: {
+      _id: "$countries",
+      total_peliculas: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      pais: "$_id",
+      total_peliculas: 1
+    }
+  },
+  {
+    $sort: { total_peliculas: -1 }
+  },
+  {
+    $limit: 3
+  }
+]);
+
+
+// 7. Número promedio de miembros del reparto para películas después del 2000
+
+// VERSIÓN 1 - Único valor promedio
+
+db.movies.aggregate([
+  {
+    $match: { year: { $gt: 2000 } }
+  },
+  {
+    $project: {
+      _id: 0,
+      num_cast: { $size: { $ifNull: ["$cast", []] } }
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      promedio_miembros_cast: { $avg: "$num_cast" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      promedio_miembros_cast: { $round: ["$promedio_miembros_cast", 2] }
+    }
+  }
+]);
+
+// VERSIÓN 2 - Valor para cada año
+
+db.movies.aggregate([
+  {
+    $match: { year: { $gt: 2000 } }
+  },
+  {
+    $project: {
+      year: 1,
+      num_cast: { $size: { $ifNull: ["$cast", []] } }
+    }
+  },
+  {
+    $group: {
+      _id: "$year", // Agrupa por año
+      promedio_miembros_cast: { $avg: "$num_cast" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      year: "$_id",
+      promedio_miembros_cast: { $round: ["$promedio_miembros_cast", 2] }
+    }
+  },
+  {
+    $sort: { year: 1 }
+  }
+]);
+
+
+// 8. Calificación promedio de IMDb y número de comentarios
+
+// VERSION 1 - Valor único de calificación promedio de IMDb y número de comentarios
+
+db.movies.aggregate([
+  {
+    $group: {
+      _id: null,
+      promedio_imdb_rating: { $avg: "$imdb.rating" },
+      total_num_mflix_comments: { $sum: "$num_mflix_comments" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      promedio_imdb_rating: { $round: ["$promedio_imdb_rating", 2] },
+      total_num_mflix_comments: 1
+    }
+  }
+]);
+
+// VERSIÓN 2 - Calificación IMDb de cada película y número de comentarios por película
+
+// VERSIÓN 2.1 - Utilizando find
+
+db.movies.find(
+  {},
+  {
+    _id:0,
+    rating: "$imdb.rating",
+    comentarios: "$num_mflix_comments",
+    title: 1
+  }
+).pretty();
+
+// VERSION 2.2 - Utilizando aggregate
+
+db.movies.aggregate([
+  {
+    $project: {
+      _id: 0,
+      title: 1,
+      rating: "$imdb.rating",
+      comentarios: "$num_mflix_comments",
+    }
+  }
+]);
+
+VERSIÓN 3 - Utilizando dos colecciones
+
+db.comments.aggregate([
+  {
+    $group: {
+      _id: "$movie_id",
+      total_comentarios: { $sum: 1 }
+    }
+  },
+  {
+    $lookup: {
+      from: "movies",
+      localField: "_id",
+      foreignField: "_id",
+      as: "movie"
+    }
+  },
+  {
+    $unwind: "$movie"
+  },
+  {
+    $project: {
+      _id: 0,
+      titulo: "$movie.title",
+      total_comentarios: 1,
+      imdb_rating: "$movie.imdb.rating"
+    }
+  }
+]);
+
+
+// 9. Número total de películas comentadas por usuario
+
+// VERSIÓN 1 - Utilizando el email como id de usuario
+
+db.comments.aggregate([
+  {
+    $group: {
+      _id: "$email",
+      total_peliculas_comentadas: { $addToSet: "$movie_id" }
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      total_peliculas_comentadas: { $size: "$total_peliculas_comentadas" }
+    }
+  }
+]);
+
+// VERSIÓN 2 - Utilizando el nombre como id de usuario
+
+db.comments.aggregate([
+  {
+    $group: {
+      _id: "$name",
+      total_peliculas_comentadas: { $addToSet: "$movie_id" }
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      total_peliculas_comentadas: { $size: "$total_peliculas_comentadas" }
+    }
+  }
+]);
+
+
+// 10. Películas del género "Western" con comentarios previos a 2020
+
+db.comments.aggregate([
+  {
+    $match: {
+      date: { $lt: ISODate("2020-01-01") }
+    }
+  },
+  {
+    $lookup: {
+      from: "movies",
+      localField: "movie_id",
+      foreignField: "_id",
+      as: "movie"
+    }
+  },
+  {
+    $unwind: "$movie"
+  },
+  {
+    $match: {
+      "movie.genres": "Western"
+    }
+  },
+  {
+    $group: {
+      _id: "$movie_id",
+      title: { $first: "$movie.title" },
+      total_comentarios: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      title: 1,
+      total_comentarios: 1
+    }
+  }
+]);
+
+
+

@@ -1,0 +1,321 @@
+// 1. Realizar una consulta que devuelva la siguiente información: Región y cantidad total de productos vendidos a clientes de esa Región.
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$cliente.region",
+      totalProductosVendidos: {
+        $sum: "$item.cantidad"
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      region: "$_id",
+      totalProductosVendidos: 1
+    }
+  }
+]);
+
+
+// 2. Basado en la consulta del punto 1, mostrar sólo la región que tenga el menor ingreso (menor cantidad de productos vendidos).
+
+// VERSIÓN 1
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$cliente.region",
+      totalProductosVendidos: {
+        $sum: "$item.cantidad"
+      }
+    }
+  },
+    {
+    $sort: { totalProductosVendidos: 1 }
+  },
+  {
+    $limit: 1
+  },
+  {
+    $project: {
+      _id: 0,
+      region: "$_id",
+      totalProductosVendidos: 1
+    }
+  }
+]);
+
+// VERSION 2
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$cliente.region",
+      totalProductosVendidos: {
+        $sum: "$item.cantidad"
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      region: "$_id",
+      totalProductosVendidos: 1
+    }
+  },
+    {
+    $sort: { totalProductosVendidos: 1 }
+  },
+   {
+    $limit: 1
+  }
+]);
+
+// 3. Basado en la consulta del punto 1, mostrar sólo las regiones que tengan una cantidad de productos vendidos superior a 10000 (modificado a 100).
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$cliente.region",
+      totalProductosVendidos: {
+        $sum: "$item.cantidad"
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      region: "$_id",
+      totalProductosVendidos: 1
+    }
+  },
+  {
+    $match: {
+      totalProductosVendidos: { $gt: 100 }
+    }
+  }
+]);
+
+
+// 4. Se requiere obtener un reporte que contenga la siguiente información, nro. cuit, apellido y nombre y región y cantidad de facturas, ordenado por apellido.
+
+db.facturas.aggregate([
+  {
+    $group: {
+      _id: {
+        cuit: "$cliente.cuit",
+        apellido: "$cliente.apellido",
+        nombre: "$cliente.nombre",
+        region: "$cliente.region"
+      },
+      cantidadFacturas: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      cuit: "$_id.cuit",
+      apellido: "$_id.apellido",
+      nombre: "$_id.nombre",
+      region: "$_id.region",
+      cantidadFacturas: 1
+    }
+  },
+  {
+    $sort: { apellido: 1 }
+  }
+]);
+
+// 5. Basados en la consulta del punto 4 informar sólo los clientes con número de CUIT mayor a 27000000000 (se quitó un cero).
+
+db.facturas.aggregate([
+  {
+    $group: {
+      _id: {
+        cuit: "$cliente.cuit",
+        apellido: "$cliente.apellido",
+        nombre: "$cliente.nombre",
+        region: "$cliente.region"
+      },
+      cantidadFacturas: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      cuit: "$_id.cuit",
+      apellido: "$_id.apellido",
+      nombre: "$_id.nombre",
+      region: "$_id.region",
+      cantidadFacturas: 1
+    }
+  },
+  {
+    $sort: { apellido: 1 }
+  },
+  {
+    $match: {
+      cuit: { $gt: 2700000000 }
+  }
+  }
+]);
+
+
+// 6. Basados en la consulta del punto 5 informar solamente la cantidad de clientes que cumplen con esta condición.
+
+db.facturas.aggregate([
+  {
+    $group: {
+      _id: {
+        cuit: "$cliente.cuit",
+        apellido: "$cliente.apellido",
+        nombre: "$cliente.nombre",
+        region: "$cliente.region"
+      },
+      cantidadFacturas: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      cuit: "$_id.cuit",
+      apellido: "$_id.apellido",
+      nombre: "$_id.nombre",
+      region: "$_id.region",
+      cantidadFacturas: 1
+    }
+  },
+  {
+    $sort: { apellido: 1 }
+  },
+  {
+    $match: {
+      cuit: { $gt: 2700000000 }
+  }
+  },
+  {
+    $count: "totalClientes"
+  }
+]);
+
+
+// 7. Se requiere realizar una consulta que devuelva la siguiente información: producto y cantidad de facturas en las que lo compraron, ordenado por cantidad de facturas descendente.
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$item.producto",
+      cantidadFacturas: { $sum: 1 }
+    }
+  },
+  {
+    $sort: { cantidadFacturas: -1 }
+  },
+  {
+    $project: {
+      _id: 0,
+      producto: "$_id",
+      cantidadFacturas: 1
+    }
+  }
+]);
+
+
+// 8. Obtener la cantidad total comprada así como también los ingresos totales para cada producto.
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$item.producto",
+      cantidadTotalComprada: { $sum: "$item.cantidad" },
+      ingresosTotales: { $sum: { $multiply: ["$item.cantidad", "$item.precio"] } }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      producto: "$_id",
+      cantidadTotalComprada: 1,
+      ingresosTotales: 1
+    }
+  }
+]);
+
+
+// 9. Idem el punto anterior, ordenar por ingresos en forma ascendente, saltear el 1ro y mostrar 2do y 3ro.
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$item.producto",
+      cantidadTotalComprada: { $sum: "$item.cantidad" },
+      ingresosTotales: { $sum: { $multiply: ["$item.cantidad", "$item.precio"] } }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      producto: "$_id",
+      cantidadTotalComprada: 1,
+      ingresosTotales: 1
+    }
+  },
+  {
+    $sort: { ingresosTotales: 1 }
+  },
+  {
+    $skip: 1
+  },
+  {
+    $limit: 2
+  }
+]);
+
+
+// 10. Obtener todos productos junto con un array de las personas que lo compraron. En este array deberá haber solo strings con el nombre completo de la persona. Los documentos entregados  omo resultado deberán tener la siguiente forma: {producto: “<nombre>”, personas:[“...”, ...]}
+
+db.facturas.aggregate([
+  {
+    $unwind: "$item"
+  },
+  {
+    $group: {
+      _id: "$item.producto",
+      personas: {
+        $addToSet: {
+          $concat: ["$cliente.nombre", " ", "$cliente.apellido"]
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      producto: "$_id",
+      personas: 1
+    }
+  }
+]);
